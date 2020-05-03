@@ -8,6 +8,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import PlanningPokerUI as UI
 
 
 type User
@@ -67,49 +68,18 @@ layout model =
                 , placeholder = Just (Input.placeholder [] (text "Your name"))
                 }
             , el [ centerX ] (text "then")
-            , let
-                ready =
-                    not (String.isEmpty model.name)
-
-                ( color, event ) =
-                    if ready then
-                        ( blue, Just CreateRoom )
-
-                    else
-                        ( lightGrey, Nothing )
-              in
-              Input.button
-                [ centerX
-                , padding 20
-                , Background.color color
-                , Font.color white
-                ]
-                { onPress = event
+            , UI.actionButton [ centerX ]
+                { isActive = not (String.isEmpty model.name)
+                , onPress = CreateRoom
                 , label = text "Make a room!"
                 }
             , el
                 [ centerX
-                , Background.color red
+                , Background.color UI.red
                 , padding 20
-                , Font.color white
+                , Font.color UI.white
                 , transparent (model.error == Nothing)
                 ]
               <|
                 text (Maybe.withDefault " " model.error)
             ]
-
-
-blue =
-    rgb255 100 100 255
-
-
-red =
-    rgb255 255 100 100
-
-
-white =
-    rgb255 255 255 255
-
-
-lightGrey =
-    rgb255 200 200 200

@@ -9,6 +9,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import PlanningPokerUI as UI
 
 
 type alias Model =
@@ -118,20 +119,20 @@ navBar model =
                 |> Maybe.withDefault ""
     in
     row
-        [ Background.color blue
+        [ Background.color UI.blue
         , height (px 50)
         , width fill
         , padding 10
         ]
         [ el
             [ Font.alignLeft
-            , Font.color white
+            , Font.color UI.white
             , width fill
             ]
             (text model.name)
         , el
             [ Font.alignRight
-            , Font.color white
+            , Font.color UI.white
             ]
             (text myName)
         ]
@@ -151,10 +152,10 @@ cards selected =
                 , Border.rounded 10
                 , Background.color <|
                     if selected == Just value then
-                        blue
+                        UI.blue
 
                     else
-                        white
+                        UI.white
                 , Font.size 50
                 ]
                 { onPress = Just (Vote value)
@@ -184,7 +185,7 @@ players playerList =
                         el
                             [ padding 10
                             , Font.alignRight
-                            , Background.color lightGrey
+                            , Background.color UI.lightGrey
                             ]
                             (text <| Maybe.withDefault " " player.vote)
               }
@@ -194,24 +195,9 @@ players playerList =
 
 moderatorTools : Element Msg
 moderatorTools =
-    Input.button
-        [ centerX
-        , padding 20
-        , Background.color blue
-        , Font.color white
-        ]
-        { onPress = Just Reset
+    UI.actionButton
+        [ centerX ]
+        { isActive = True
+        , onPress = Reset
         , label = text "Reset"
         }
-
-
-blue =
-    rgb255 100 100 255
-
-
-lightGrey =
-    rgb255 200 200 200
-
-
-white =
-    rgb255 255 255 255
