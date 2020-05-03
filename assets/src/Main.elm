@@ -1,116 +1,122 @@
 module Main exposing (main)
 
-import Browser
-import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
-import Element.Font as Font
-import Element.Input as Input
-import Html exposing (Html)
-
-
-type User
-    = Moderator { name : String }
+import Browser exposing (Document)
+import Browser.Navigation as Nav
+import Html
+import PlanningPokerEntry as Entry
+import PlanningPokerNotFound as NotFound
+import PlanningPokerRoom as Room
+import Url exposing (Url)
+import Url.Parser as Parser exposing ((</>), Parser, s, string)
 
 
 type alias Model =
-    { name : String
-    , user : Maybe User
-    , error : Maybe String
+    { page : Page
+    , key : Nav.Key
     }
 
 
+type Page
+    = EntryPage Entry.Model
+    | RoomPage Room.Model
+    | NotFound
+
+
+type Route
+    = Entry
+    | Room String
+
+
 type Msg
-    = NameChanged String
-    | CreateRoom
+    = ChangedUrl Url
+    | ClickedLink Browser.UrlRequest
+    | EntryMsg Entry.Msg
+    | RoomMsg Room.Msg
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { name = ""
-      , user = Nothing
-      , error = Nothing
-      }
-    , Cmd.none
-    )
-
-
-main =
-    Browser.element
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = \_ -> Sub.none
-        }
+init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init _ url key =
+    updateUrl url { page = NotFound, key = key }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case msg of
-        NameChanged newName ->
-            ( { model | name = newName }, Cmd.none )
+    case ( msg, model.page ) of
+        ( ClickedLink urlRequest, _ ) ->
+            ( model, Cmd.none )
 
-        CreateRoom ->
-            ( { model | error = Just "Oops." }, Cmd.none )
+        ( ChangedUrl url, _ ) ->
+            updateUrl url model
+
+        ( EntryMsg entryMsg, EntryPage entryModel ) ->
+            toEntry model (Entry.update model.key entryMsg entryModel)
+
+        ( RoomMsg roomMsg, RoomPage roomModel ) ->
+            toRoom model (Room.update model.key roomMsg roomModel)
+
+        _ ->
+            ( model, Cmd.none )
 
 
-view : Model -> Html Msg
+toEntry : Model -> ( Entry.Model, Cmd Entry.Msg ) -> ( Model, Cmd Msg )
+toEntry model ( entryModel, entryCmd ) =
+    ( { model | page = EntryPage entryModel }
+    , Cmd.map EntryMsg entryCmd
+    )
+
+
+toRoom : Model -> ( Room.Model, Cmd Room.Msg ) -> ( Model, Cmd Msg )
+toRoom model ( roomModel, roomCmd ) =
+    ( { model | page = RoomPage roomModel }
+    , Cmd.map RoomMsg roomCmd
+    )
+
+
+updateUrl : Url -> Model -> ( Model, Cmd Msg )
+updateUrl url model =
+    case Parser.parse parser url of
+        Just Entry ->
+            toEntry model (Entry.init ())
+
+        Just (Room id) ->
+            toRoom model (Room.init ())
+
+        Nothing ->
+            ( model, Cmd.none )
+
+
+parser : Parser (Route -> a) a
+parser =
+    Parser.oneOf
+        [ Parser.map Entry Parser.top
+        , Parser.map Room (s "room" </> string)
+        ]
+
+
+view : Model -> Document Msg
 view model =
-    Element.layout [] <|
-        column
-            [ width fill, centerY, spacing 30 ]
-            [ el [ centerX ] (text "Oh, hey!")
-            , el [ centerX ] (text "Tell us who you are")
-            , Input.text [ centerX, width (px 300) ]
-                { onChange = NameChanged
-                , text = model.name
-                , label = Input.labelHidden "Your name"
-                , placeholder = Just (Input.placeholder [] (text "Your name"))
-                }
-            , el [ centerX ] (text "then")
-            , let
-                ready =
-                    not (String.isEmpty model.name)
+    let
+        mapDocument toMsg { title, body } =
+            { title = title, body = List.map (Html.map toMsg) body }
+    in
+    case model.page of
+        EntryPage entryModel ->
+            mapDocument EntryMsg <| Entry.view entryModel
 
-                ( color, event ) =
-                    if ready then
-                        ( blue, Just CreateRoom )
+        RoomPage roomModel ->
+            mapDocument RoomMsg <| Room.view roomModel
 
-                    else
-                        ( lightGrey, Nothing )
-              in
-              Input.button
-                [ centerX
-                , padding 20
-                , Background.color color
-                , Font.color white
-                ]
-                { onPress = event
-                , label = text "Make a room!"
-                }
-            , el
-                [ centerX
-                , Background.color red
-                , padding 20
-                , Font.color white
-                , transparent (model.error == Nothing)
-                ]
-              <|
-                text (Maybe.withDefault " " model.error)
-            ]
+        NotFound ->
+            NotFound.view
 
 
-blue =
-    rgb255 100 100 255
-
-
-red =
-    rgb255 255 100 100
-
-
-white =
-    rgb255 255 255 255
-
-
-lightGrey =
-    rgb255 200 200 200
+main : Program () Model Msg
+main =
+    Browser.application
+        { init = init
+        , view = view
+        , update = update
+        , onUrlChange = ChangedUrl
+        , onUrlRequest = ClickedLink
+        , subscriptions = \_ -> Sub.none
+        }

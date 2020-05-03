@@ -1,6 +1,7 @@
-module Room exposing (main)
+module PlanningPokerRoom exposing (Model, Msg, init, update, view)
 
-import Browser
+import Browser exposing (Document)
+import Browser.Navigation as Nav
 import Dict exposing (Dict)
 import Element exposing (..)
 import Element.Background as Background
@@ -55,8 +56,8 @@ init _ =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
+update key msg model =
     case msg of
         Vote value ->
             ( { model
@@ -80,8 +81,15 @@ update msg model =
             )
 
 
-view : Model -> Html Msg
+view : Model -> Document Msg
 view model =
+    { title = model.name
+    , body = [ layout model ]
+    }
+
+
+layout : Model -> Html Msg
+layout model =
     let
         myVote =
             Dict.get model.player model.players
@@ -207,12 +215,3 @@ lightGrey =
 
 white =
     rgb255 255 255 255
-
-
-main =
-    Browser.element
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = \_ -> Sub.none
-        }
