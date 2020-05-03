@@ -7,9 +7,6 @@
 # General application configuration
 use Mix.Config
 
-config :planningpoker,
-  ecto_repos: [Planningpoker.Repo]
-
 # Configures the endpoint
 config :planningpoker, PlanningpokerWeb.Endpoint,
   url: [host: "localhost"],

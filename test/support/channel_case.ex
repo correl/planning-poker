@@ -28,13 +28,7 @@ defmodule PlanningpokerWeb.ChannelCase do
     end
   end
 
-  setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Planningpoker.Repo)
-
-    unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Planningpoker.Repo, {:shared, self()})
-    end
-
+  setup _tags do
     :ok
   end
 end
