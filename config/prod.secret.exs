@@ -27,3 +27,4 @@ config :planningpoker, PlanningpokerWeb.Endpoint,
 #
 # Then you can assemble a release by calling `mix release`.
 # See `mix help release` for more information.
+config :planningpoker, PlanningpokerWeb.Endpoint, server: true
