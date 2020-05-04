@@ -1,0 +1,5 @@
+_build
+deps
+assets/node_modules
+assets/elm-stuff
+test
