@@ -212,20 +212,20 @@ viewRoom player room =
 navBar : { title : String, playerName : String } -> Element Msg
 navBar { title, playerName } =
     row
-        [ Background.color UI.blue
+        [ Background.color UI.colors.primary
         , height (px 50)
         , width fill
         , padding 10
         ]
         [ el
             [ Font.alignLeft
-            , Font.color UI.white
+            , Font.color UI.colors.background
             , width fill
             ]
             (text title)
         , el
             [ Font.alignRight
-            , Font.color UI.white
+            , Font.color UI.colors.background
             ]
             (text playerName)
         ]
@@ -245,10 +245,10 @@ viewCards selected =
                 , Border.rounded 10
                 , Background.color <|
                     if selected == Just value then
-                        UI.blue
+                        UI.colors.selected
 
                     else
-                        UI.white
+                        UI.colors.background
                 , Font.size 50
                 ]
                 { onPress = Just (Vote value)
@@ -278,7 +278,6 @@ viewPlayers playerList =
                         el
                             [ padding 10
                             , Font.alignRight
-                            , Background.color UI.lightGrey
                             ]
                             (text <| Maybe.withDefault " " player.vote)
               }

@@ -1,13 +1,9 @@
 module PlanningPokerUI exposing
     ( actionButton
-    , blue
     , colors
     , fontSizes
     , heroText
-    , lightGrey
-    , red
     , toDocument
-    , white
     )
 
 import Browser exposing (Document)
@@ -26,7 +22,10 @@ colors =
     , background = white
     , selected = primary
     , disabled = lightGrey
-    , error = red
+    , errorBackground = red
+    , errorForeground = white
+    , text = black
+    , buttonText = white
     }
 
 
@@ -54,6 +53,11 @@ red =
 white : Color
 white =
     rgb255 255 255 255
+
+
+black : Color
+black =
+    rgb255 0 0 0
 
 
 actionButton :
@@ -93,7 +97,7 @@ toDocument : { title : String, body : List (Element msg) } -> Document msg
 toDocument { title, body } =
     { title = title
     , body =
-        [ layout [ explain Debug.todo ] <|
+        [ layout [] <|
             column [ width fill, height fill, spacing 20 ] body
         ]
     }

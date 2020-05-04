@@ -84,9 +84,9 @@ layout model =
                 }
             , el
                 [ centerX
-                , Background.color UI.red
+                , Background.color UI.colors.errorBackground
                 , padding 20
-                , Font.color UI.white
+                , Font.color UI.colors.errorForeground
                 , transparent (model.error == Nothing)
                 ]
               <|
