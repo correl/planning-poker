@@ -1,33 +1,63 @@
-module PlanningPokerUI exposing (actionButton, blue, lightGrey, red, white)
+module PlanningPokerUI exposing
+    ( actionButton
+    , blue
+    , colors
+    , fontSizes
+    , heroText
+    , lightGrey
+    , red
+    , toDocument
+    , white
+    )
 
-import Element exposing (Element)
+import Browser exposing (Document)
+import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
 import Element.Input as Input
 
 
-blue : Element.Color
+colors =
+    let
+        primary =
+            blue
+    in
+    { primary = primary
+    , background = white
+    , selected = primary
+    , disabled = lightGrey
+    , error = red
+    }
+
+
+fontSizes =
+    { huge = 80
+    , normal = 18
+    }
+
+
+blue : Color
 blue =
-    Element.rgb255 100 100 255
+    rgb255 100 100 255
 
 
-lightGrey : Element.Color
+lightGrey : Color
 lightGrey =
-    Element.rgb255 200 200 200
+    rgb255 200 200 200
 
 
-red : Element.Color
+red : Color
 red =
-    Element.rgb255 255 100 100
+    rgb255 255 100 100
 
 
-white : Element.Color
+white : Color
 white =
-    Element.rgb255 255 255 255
+    rgb255 255 255 255
 
 
 actionButton :
-    List (Element.Attribute msg)
+    List (Attribute msg)
     -> { isActive : Bool, onPress : msg, label : Element msg }
     -> Element msg
 actionButton attrs { isActive, onPress, label } =
@@ -40,7 +70,7 @@ actionButton attrs { isActive, onPress, label } =
                 ( lightGrey, Nothing )
     in
     Input.button
-        ([ Element.padding 20
+        ([ padding 20
          , Background.color color
          , Font.color white
          ]
@@ -49,3 +79,21 @@ actionButton attrs { isActive, onPress, label } =
         { onPress = maybeEvent
         , label = label
         }
+
+
+heroText :
+    List (Attribute msg)
+    -> String
+    -> Element msg
+heroText attrs s =
+    el ([ Font.size fontSizes.huge ] ++ attrs) (text s)
+
+
+toDocument : { title : String, body : List (Element msg) } -> Document msg
+toDocument { title, body } =
+    { title = title
+    , body =
+        [ layout [ explain Debug.todo ] <|
+            column [ width fill, height fill, spacing 20 ] body
+        ]
+    }

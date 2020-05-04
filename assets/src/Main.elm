@@ -79,7 +79,30 @@ updateUrl url model =
             toEntry model (Entry.init ())
 
         Just (Room id) ->
-            toRoom model (Room.init ())
+            case model.page of
+                EntryPage entryModel ->
+                    toRoom model
+                        (Room.init
+                            { room = id
+                            , roomName =
+                                case String.trim entryModel.roomName of
+                                    "" ->
+                                        "Planning Poker"
+
+                                    trimmed ->
+                                        trimmed
+                            , playerName = entryModel.playerName
+                            }
+                        )
+
+                _ ->
+                    toRoom model
+                        (Room.init
+                            { room = id
+                            , roomName = "Planning Poker"
+                            , playerName = ""
+                            }
+                        )
 
         Nothing ->
             ( model, Cmd.none )

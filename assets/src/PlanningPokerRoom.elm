@@ -13,8 +13,22 @@ import PlanningPokerUI as UI
 
 
 type alias Model =
-    { name : String
+    { room : Maybe Room
     , player : String
+    , playerName : String
+    }
+
+
+type Msg
+    = Vote String
+    | Reset
+    | PlayerNameChanged String
+    | JoinRoom
+
+
+type alias Room =
+    { id : String
+    , name : String
     , players : Dict String Player
     }
 
@@ -31,27 +45,52 @@ type alias Player =
     }
 
 
-type Msg
-    = Vote String
-    | Reset
-
-
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { name = "Planning Poker"
-      , player = "099b73da-e714-4085-aa33-6419076d0765"
-      , players =
+init : { room : String, roomName : String, playerName : String } -> ( Model, Cmd Msg )
+init { room, roomName, playerName } =
+    let
+        preparedRooms =
             Dict.fromList
-                [ ( "099b73da-e714-4085-aa33-6419076d0765"
-                  , { level = Moderator, name = "Me", vote = Nothing }
+                [ -- Room created from mocked entry page
+                  ( "a0fd1422-abd9-434e-9d7c-883294b2992c"
+                  , { id = "a0fd1422-abd9-434e-9d7c-883294b2992c"
+                    , name = roomName
+                    , players =
+                        Dict.fromList
+                            [ ( "00000000-0000-0000-0000-000000000000"
+                              , { level = Moderator, name = playerName, vote = Nothing }
+                              )
+                            , ( "44db0a59-28bb-4b9f-8e5d-a46f2c2a3266"
+                              , { level = Participant, name = "John", vote = Nothing }
+                              )
+                            , ( "69b8b450-bc2a-4eeb-b056-91c7aa4ba528"
+                              , { level = Participant, name = "Jane", vote = Nothing }
+                              )
+                            ]
+                    }
                   )
-                , ( "44db0a59-28bb-4b9f-8e5d-a46f2c2a3266"
-                  , { level = Participant, name = "John", vote = Nothing }
-                  )
-                , ( "69b8b450-bc2a-4eeb-b056-91c7aa4ba528"
-                  , { level = Participant, name = "Jane", vote = Nothing }
+                , -- Room created from direct url access (unjoined)
+                  ( "joinable"
+                  , { id = "a0fd1422-abd9-434e-9d7c-883294b2992c"
+                    , name = "Today's Grooming Session"
+                    , players =
+                        Dict.fromList
+                            [ ( "ffffffff-ffff-ffff-ffff-ffffffffffff"
+                              , { level = Moderator, name = "Pat", vote = Nothing }
+                              )
+                            , ( "44db0a59-28bb-4b9f-8e5d-a46f2c2a3266"
+                              , { level = Participant, name = "John", vote = Nothing }
+                              )
+                            , ( "69b8b450-bc2a-4eeb-b056-91c7aa4ba528"
+                              , { level = Participant, name = "Jane", vote = Nothing }
+                              )
+                            ]
+                    }
                   )
                 ]
+    in
+    ( { room = Dict.get room preparedRooms
+      , player = "00000000-0000-0000-0000-000000000000"
+      , playerName = playerName
       }
     , Cmd.none
     )
@@ -59,65 +98,119 @@ init _ =
 
 update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
 update key msg model =
-    case msg of
-        Vote value ->
-            ( { model
-                | players =
-                    Dict.update
-                        model.player
-                        (Maybe.map (\p -> { p | vote = Just value }))
-                        model.players
-              }
-            , Cmd.none
-            )
+    case model.room of
+        Just room ->
+            case msg of
+                Vote value ->
+                    ( { model
+                        | room =
+                            Just
+                                { room
+                                    | players =
+                                        Dict.update
+                                            model.player
+                                            (Maybe.map (\p -> { p | vote = Just value }))
+                                            room.players
+                                }
+                      }
+                    , Cmd.none
+                    )
 
-        Reset ->
-            ( { model
-                | players =
-                    Dict.map
-                        (\k v -> { v | vote = Nothing })
-                        model.players
-              }
-            , Cmd.none
-            )
+                Reset ->
+                    ( { model
+                        | room =
+                            Just
+                                { room
+                                    | players =
+                                        Dict.map
+                                            (\k v -> { v | vote = Nothing })
+                                            room.players
+                                }
+                      }
+                    , Cmd.none
+                    )
+
+                PlayerNameChanged newName ->
+                    ( { model | playerName = newName }, Cmd.none )
+
+                JoinRoom ->
+                    let
+                        newRoom =
+                            { room
+                                | players =
+                                    Dict.insert model.player
+                                        { level = Participant
+                                        , name = model.playerName
+                                        , vote = Nothing
+                                        }
+                                        room.players
+                            }
+                    in
+                    ( { model | room = Just newRoom }, Cmd.none )
+
+        Nothing ->
+            case msg of
+                _ ->
+                    ( model, Cmd.none )
 
 
 view : Model -> Document Msg
 view model =
-    { title = model.name
-    , body = [ layout model ]
-    }
+    case model.room of
+        Just room ->
+            let
+                maybePlayer =
+                    Dict.get model.player room.players
+            in
+            case maybePlayer of
+                Just player ->
+                    UI.toDocument
+                        { title = room.name
+                        , body =
+                            [ navBar { title = room.name, playerName = player.name }
+                            , viewRoom model.player room
+                            ]
+                        }
+
+                Nothing ->
+                    UI.toDocument
+                        { title = room.name
+                        , body =
+                            [ navBar { title = room.name, playerName = "" }
+                            , joinForm room model.playerName
+                            ]
+                        }
+
+        _ ->
+            UI.toDocument
+                { title = "Loading Room..."
+                , body =
+                    [ UI.heroText [ centerX, centerY ] "Loading..."
+                    ]
+                }
 
 
-layout : Model -> Html Msg
-layout model =
+viewRoom : String -> Room -> Element Msg
+viewRoom player room =
     let
         myVote =
-            Dict.get model.player model.players
+            Dict.get player room.players
                 |> Maybe.andThen .vote
     in
-    Element.layout [] <|
-        column [ width fill, spacing 20 ]
-            [ navBar model
-            , row
-                [ width fill ]
-                [ el [ width (fillPortion 3), alignTop ] <|
-                    cards myVote
-                , el [ width (fillPortion 1), alignTop ] <|
-                    players (Dict.values model.players)
-                ]
-            , moderatorTools
+    column [ width fill, spacing 20 ]
+        [ row
+            [ width fill ]
+            [ el [ width (fillPortion 3), alignTop ] <|
+                viewCards myVote
+            , el [ width (fillPortion 1), alignTop ] <|
+                viewPlayers (Dict.values room.players)
             ]
+        , moderatorTools
+        ]
 
 
-navBar : Model -> Element Msg
-navBar model =
-    let
-        myName =
-            Dict.get model.player model.players
-                |> Maybe.map .name
-                |> Maybe.withDefault ""
-    in
+navBar : { title : String, playerName : String } -> Element Msg
+navBar { title, playerName } =
     row
         [ Background.color UI.blue
         , height (px 50)
@@ -129,17 +222,17 @@ navBar model =
             , Font.color UI.white
             , width fill
             ]
-            (text model.name)
+            (text title)
         , el
             [ Font.alignRight
             , Font.color UI.white
             ]
-            (text myName)
+            (text playerName)
         ]
 
 
-cards : Maybe String -> Element Msg
-cards selected =
+viewCards : Maybe String -> Element Msg
+viewCards selected =
     let
         card value =
             Input.button
@@ -166,8 +259,8 @@ cards selected =
         List.map card [ "1", "3", "5", "8", "13" ]
 
 
-players : List Player -> Element Msg
-players playerList =
+viewPlayers : List Player -> Element Msg
+viewPlayers playerList =
     table [ width fill ]
         { data = playerList
         , columns =
@@ -201,3 +294,47 @@ moderatorTools =
         , onPress = Reset
         , label = text "Reset"
         }
+
+
+joinForm : Room -> String -> Element Msg
+joinForm room playerName =
+    let
+        players =
+            Dict.values room.players
+                |> List.map .name
+    in
+    column [ width fill, spacing 20, centerX, centerY ]
+        [ UI.heroText [ centerX ] "Welcome!"
+        , el [ centerX ] (text "Tell us who you are")
+        , Input.text [ centerX, width (px 300), Font.center ]
+            { onChange = PlayerNameChanged
+            , text = playerName
+            , label = Input.labelHidden "Your name"
+            , placeholder = Just (Input.placeholder [] (text "Your name"))
+            }
+        , UI.actionButton [ centerX ]
+            { isActive = not (String.isEmpty playerName)
+            , onPress = JoinRoom
+            , label = text "Join!"
+            }
+        , el [ centerX ]
+            (text <|
+                case players of
+                    [] ->
+                        "Nobody else has joined yet."
+
+                    [ player ] ->
+                        player ++ " is already here!"
+
+                    player :: rest ->
+                        if List.length players <= 3 then
+                            String.join ", " rest
+                                ++ ", and "
+                                ++ player
+                                ++ " are already here!"
+
+                        else
+                            String.fromInt (List.length players)
+                                ++ " People are already here"
+            )
+        ]
