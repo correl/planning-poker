@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "phoenix": "file:../deps/phoenix",
-    "phoenix_html": "file:../deps/phoenix_html"
+    "phoenix_html": "file:../deps/phoenix_html",
+    "uuid4": "^1.1.4"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

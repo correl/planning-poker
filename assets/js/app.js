@@ -14,8 +14,38 @@ import "../css/app.scss"
 //
 import "phoenix_html"
 
-import { Elm } from "../src/Main.elm";
+import { Socket, Presence } from "phoenix"
+import { Elm } from "../src/Main.elm"
+import uuid4 from "uuid4"
+
+var player_id = uuid4()
+
+var socket = new Socket("/socket", {params: {player_id: player_id}})
+socket.connect()
 
 var app = Elm.Main.init({
-    node: document.getElementById("elm-main")
-});
+    node: document.getElementById("elm-main"),
+    flags: "player:" + player_id
+})
+
+app.ports.joinRoom.subscribe(options => {
+    let channel = socket.channel(
+        "room:" + options.room,
+        {playerName: options.playerName}
+    )
+    let presences = {}
+    channel.join()
+        .receive("ok", resp => {
+            console.log("Joined successfully", resp);
+            app.ports.joinedRoom.send(options.room);
+        })
+        .receive("error", resp => { console.log("Unable to join", resp) })
+    channel.on("presence_state", state => {
+        presences = Presence.syncState(presences, state)
+        app.ports.gotPresence.send(presences)
+    })
+    channel.on("presence_diff", diff => {
+        presences = Presence.syncDiff(presences, diff)
+        app.ports.gotPresence.send(presences)
+    })
+})

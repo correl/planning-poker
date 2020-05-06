@@ -12,9 +12,10 @@ defmodule Planningpoker.Application do
       # Start the PubSub system
       {Phoenix.PubSub, name: Planningpoker.PubSub},
       # Start the Endpoint (http/https)
-      PlanningpokerWeb.Endpoint
+      PlanningpokerWeb.Endpoint,
       # Start a worker by calling: Planningpoker.Worker.start_link(arg)
       # {Planningpoker.Worker, arg}
+      PlanningpokerWeb.Presence
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

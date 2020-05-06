@@ -8,6 +8,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html exposing (Html)
+import PlanningPokerAPI as API
 import PlanningPokerUI as UI
 
 
@@ -23,6 +24,7 @@ type Msg
     = PlayerNameChanged String
     | RoomNameChanged String
     | CreateRoom
+    | JoinedRoom String
 
 
 init : () -> ( Model, Cmd Msg )
@@ -46,7 +48,16 @@ update key msg model =
             ( { model | roomName = newName }, Cmd.none )
 
         CreateRoom ->
-            ( model, Nav.pushUrl key "/room/a0fd1422-abd9-434e-9d7c-883294b2992c" )
+            let
+                room =
+                    "a0fd1422-abd9-434e-9d7c-883294b2992c"
+            in
+            ( model
+            , API.joinRoom { room = room, playerName = model.playerName }
+            )
+
+        JoinedRoom room ->
+            ( model, Nav.pushUrl key ("/room/" ++ room) )
 
 
 view : Model -> Document Msg
@@ -92,3 +103,8 @@ layout model =
               <|
                 text (Maybe.withDefault " " model.error)
             ]
+
+
+subscriptions : Sub Msg
+subscriptions =
+    API.joinedRoom JoinedRoom

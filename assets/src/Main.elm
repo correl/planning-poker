@@ -13,6 +13,7 @@ import Url.Parser as Parser exposing ((</>), Parser, s, string)
 type alias Model =
     { page : Page
     , key : Nav.Key
+    , player : String
     }
 
 
@@ -34,9 +35,9 @@ type Msg
     | RoomMsg Room.Msg
 
 
-init : () -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init _ url key =
-    updateUrl url { page = NotFound, key = key }
+init : String -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init player url key =
+    updateUrl url { page = NotFound, key = key, player = player }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,7 +84,8 @@ updateUrl url model =
                 EntryPage entryModel ->
                     toRoom model
                         (Room.init
-                            { room = id
+                            { id = id
+                            , player = model.player
                             , roomName =
                                 case String.trim entryModel.roomName of
                                     "" ->
@@ -98,7 +100,8 @@ updateUrl url model =
                 _ ->
                     toRoom model
                         (Room.init
-                            { room = id
+                            { id = id
+                            , player = model.player
                             , roomName = "Planning Poker"
                             , playerName = ""
                             }
@@ -133,7 +136,7 @@ view model =
             NotFound.view
 
 
-main : Program () Model Msg
+main : Program String Model Msg
 main =
     Browser.application
         { init = init
@@ -141,5 +144,13 @@ main =
         , update = update
         , onUrlChange = ChangedUrl
         , onUrlRequest = ClickedLink
-        , subscriptions = \_ -> Sub.none
+        , subscriptions = subscriptions
         }
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ Sub.map EntryMsg Entry.subscriptions
+        , Sub.map RoomMsg Room.subscriptions
+        ]
