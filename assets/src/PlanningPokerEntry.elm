@@ -22,7 +22,6 @@ type alias Model =
 type Msg
     = PlayerNameChanged String
     | CreateRoom
-    | JoinedRoom String
 
 
 init : () -> ( Model, Cmd Msg )
@@ -41,20 +40,11 @@ update key msg model =
         PlayerNameChanged newName ->
             ( { model | playerName = newName }, Cmd.none )
 
-
         CreateRoom ->
             let
                 room =
                     "a0fd1422-abd9-434e-9d7c-883294b2992c"
             in
-            ( model
-            , Cmd.batch
-                [ API.joinRoom { room = room }
-                , API.newProfile { playerName = model.playerName }
-                ]
-            )
-
-        JoinedRoom room ->
             ( model, Nav.pushUrl key ("/room/" ++ room) )
 
 
@@ -94,8 +84,3 @@ layout model =
               <|
                 text (Maybe.withDefault " " model.error)
             ]
-
-
-subscriptions : Sub Msg
-subscriptions =
-    API.joinedRoom JoinedRoom

@@ -22,11 +22,17 @@ import PlanningPokerUI as UI
 
 
 type alias Model =
-    { room : Room
+    { state : State
+    , room : Room
     , player : String
     , playerName : String
     , showVotes : Bool
     }
+
+
+type State
+    = Joining
+    | Playing
 
 
 type Msg
@@ -76,13 +82,26 @@ init { id, player, roomName, playerName } =
             , name = roomName
             , players = Dict.empty
             }
+
+        ( state, cmd ) =
+            if String.isEmpty playerName then
+                ( Joining, API.joinRoom { room = id } )
+
+            else
+                ( Playing
+                , Cmd.batch
+                    [ API.joinRoom { room = id }
+                    , API.newProfile { playerName = playerName }
+                    ]
+                )
     in
     ( { room = room
+      , state = state
       , player = player
       , playerName = playerName
       , showVotes = False
       }
-    , API.joinRoom { room = id }
+    , cmd
     )
 
 
@@ -130,7 +149,7 @@ update key msg model =
             ( { model | playerName = newName }, Cmd.none )
 
         JoinRoom ->
-            ( model
+            ( { model | state = Playing }
             , API.newProfile { playerName = model.playerName }
             )
 
@@ -150,24 +169,26 @@ update key msg model =
 view : Model -> Document Msg
 view model =
     let
-        maybePlayer =
+        playerName =
             Dict.get model.player model.room.players
+                |> Maybe.map .name
+                |> Maybe.withDefault model.playerName
     in
-    case maybePlayer of
-        Just player ->
+    case model.state of
+        Playing ->
             UI.toDocument
                 { title = model.room.name
                 , body =
-                    [ navBar { title = model.room.name, playerName = player.name }
+                    [ navBar { title = model.room.name, playerName = playerName }
                     , viewRoom model.player model.room model.showVotes
                     ]
                 }
 
-        Nothing ->
+        Joining ->
             UI.toDocument
                 { title = model.room.name
                 , body =
-                    [ navBar { title = model.room.name, playerName = "" }
+                    [ navBar { title = model.room.name, playerName = playerName }
                     , joinForm model.room model.playerName
                     ]
                 }

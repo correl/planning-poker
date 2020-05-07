@@ -47,7 +47,6 @@ app.ports.joinRoom.subscribe(options => {
     channel.join()
         .receive("ok", resp => {
             console.log("Joined successfully", resp);
-            app.ports.joinedRoom.send(options.room);
         })
         .receive("error", resp => { console.log("Unable to join", resp) })
 

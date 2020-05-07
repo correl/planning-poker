@@ -145,6 +145,5 @@ main =
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
-        [ Sub.map EntryMsg Entry.subscriptions
-        , Sub.map RoomMsg Room.subscriptions
+        [ Sub.map RoomMsg Room.subscriptions
         ]
