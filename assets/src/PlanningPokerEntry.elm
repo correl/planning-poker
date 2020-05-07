@@ -13,7 +13,8 @@ import PlanningPokerUI as UI
 
 
 type alias Model =
-    { playerName : String
+    { room : String
+    , playerName : String
     , player : Maybe String
     , error : Maybe String
     }
@@ -24,9 +25,10 @@ type Msg
     | CreateRoom
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { playerName = ""
+init : String -> ( Model, Cmd Msg )
+init room =
+    ( { room = room
+      , playerName = ""
       , player = Nothing
       , error = Nothing
       }
@@ -41,11 +43,7 @@ update key msg model =
             ( { model | playerName = newName }, Cmd.none )
 
         CreateRoom ->
-            let
-                room =
-                    "a0fd1422-abd9-434e-9d7c-883294b2992c"
-            in
-            ( model, Nav.pushUrl key ("/room/" ++ room) )
+            ( model, Nav.pushUrl key ("/room/" ++ model.room) )
 
 
 view : Model -> Document Msg

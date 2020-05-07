@@ -19,13 +19,17 @@ import { Elm } from "../src/Main.elm"
 import uuid4 from "uuid4"
 
 var player_id = uuid4()
+var room_id  = uuid4()
 
 var socket = new Socket("/socket", {params: {player_id: player_id}})
 socket.connect()
 
 var app = Elm.Main.init({
     node: document.getElementById("elm-main"),
-    flags: "player:" + player_id
+    flags: {
+        player: "player:" + player_id,
+        room: room_id
+    }
 })
 
 app.ports.joinRoom.subscribe(options => {

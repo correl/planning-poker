@@ -10,10 +10,17 @@ import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, s, string)
 
 
+type alias Flags =
+    { player : String
+    , room : String
+    }
+
+
 type alias Model =
     { page : Page
     , key : Nav.Key
     , player : String
+    , room : String
     }
 
 
@@ -35,9 +42,14 @@ type Msg
     | RoomMsg Room.Msg
 
 
-init : String -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init player url key =
-    updateUrl url { page = NotFound, key = key, player = player }
+init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
+init { player, room } url key =
+    updateUrl url
+        { page = NotFound
+        , key = key
+        , player = player
+        , room = room
+        }
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -77,7 +89,7 @@ updateUrl : Url -> Model -> ( Model, Cmd Msg )
 updateUrl url model =
     case Parser.parse parser url of
         Just Entry ->
-            toEntry model (Entry.init ())
+            toEntry model (Entry.init model.room)
 
         Just (Room id) ->
             case model.page of
@@ -130,7 +142,7 @@ view model =
             NotFound.view
 
 
-main : Program String Model Msg
+main : Program Flags Model Msg
 main =
     Browser.application
         { init = init
