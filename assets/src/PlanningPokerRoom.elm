@@ -22,7 +22,7 @@ import PlanningPokerUI as UI
 
 
 type alias Model =
-    { room : Maybe Room
+    { room : Room
     , player : String
     , playerName : String
     , showVotes : Bool
@@ -77,125 +77,98 @@ init { id, player, roomName, playerName } =
             , players = Dict.empty
             }
     in
-    ( { room = Just room
+    ( { room = room
       , player = player
       , playerName = playerName
       , showVotes = False
       }
-    , Cmd.none
+    , API.joinRoom { room = id }
     )
 
 
 update : Nav.Key -> Msg -> Model -> ( Model, Cmd Msg )
 update key msg model =
-    case model.room of
-        Just room ->
-            case msg of
-                Vote value ->
-                    ( { model
-                        | room =
-                            Just
-                                { room
-                                    | players =
-                                        Dict.update
-                                            model.player
-                                            (Maybe.map (\p -> { p | vote = Just value }))
-                                            room.players
-                                }
-                      }
-                    , Cmd.none
-                    )
+    let
+        room =
+            model.room
+    in
+    case msg of
+        Vote value ->
+            ( { model
+                | room =
+                    { room
+                        | players =
+                            Dict.update
+                                model.player
+                                (Maybe.map (\p -> { p | vote = Just value }))
+                                room.players
+                    }
+              }
+            , Cmd.none
+            )
 
-                Reveal ->
-                    ( { model | showVotes = True }
-                    , Cmd.none
-                    )
+        Reveal ->
+            ( { model | showVotes = True }
+            , Cmd.none
+            )
 
-                Reset ->
-                    ( { model
-                        | room =
-                            Just
-                                { room
-                                    | players =
-                                        Dict.map
-                                            (\k v -> { v | vote = Nothing })
-                                            room.players
-                                }
-                        , showVotes = False
-                      }
-                    , Cmd.none
-                    )
+        Reset ->
+            ( { model
+                | room =
+                    { room
+                        | players =
+                            Dict.map
+                                (\k v -> { v | vote = Nothing })
+                                room.players
+                    }
+                , showVotes = False
+              }
+            , Cmd.none
+            )
 
-                PlayerNameChanged newName ->
-                    ( { model | playerName = newName }, Cmd.none )
+        PlayerNameChanged newName ->
+            ( { model | playerName = newName }, Cmd.none )
 
-                JoinRoom ->
+        JoinRoom ->
+            ( model
+            , API.newProfile { playerName = model.playerName }
+            )
+
+        GotPresence value ->
+            case Decode.decodeValue playersDecoder value of
+                Ok players ->
                     let
                         newRoom =
-                            { room
-                                | players =
-                                    Dict.insert model.player
-                                        { level = Participant
-                                        , name = model.playerName
-                                        , vote = Nothing
-                                        }
-                                        room.players
-                            }
+                            { room | players = players }
                     in
-                    ( model
-                    , API.joinRoom { room = room.id, playerName = model.playerName }
-                    )
+                    ( { model | room = newRoom }, Cmd.none )
 
-                GotPresence value ->
-                    case Decode.decodeValue playersDecoder value of
-                        Ok players ->
-                            let
-                                newRoom =
-                                    { room | players = players }
-                            in
-                            ( { model | room = Just newRoom }, Cmd.none )
-
-                        Err _ ->
-                            ( model, Cmd.none )
-
-        Nothing ->
-            case msg of
-                _ ->
+                Err _ ->
                     ( model, Cmd.none )
 
 
 view : Model -> Document Msg
 view model =
-    case model.room of
-        Just room ->
-            let
-                maybePlayer =
-                    Dict.get model.player room.players
-            in
-            case maybePlayer of
-                Just player ->
-                    UI.toDocument
-                        { title = room.name
-                        , body =
-                            [ navBar { title = room.name, playerName = player.name }
-                            , viewRoom model.player room model.showVotes
-                            ]
-                        }
-
-                Nothing ->
-                    UI.toDocument
-                        { title = room.name
-                        , body =
-                            [ navBar { title = room.name, playerName = "" }
-                            , joinForm room model.playerName
-                            ]
-                        }
-
-        _ ->
+    let
+        maybePlayer =
+            Dict.get model.player model.room.players
+    in
+    case maybePlayer of
+        Just player ->
             UI.toDocument
-                { title = "Loading Room..."
+                { title = model.room.name
                 , body =
-                    [ UI.heroText [ centerX, centerY ] "Loading..."
+                    [ navBar { title = model.room.name, playerName = player.name }
+                    , viewRoom model.player model.room model.showVotes
+                    ]
+                }
+
+        Nothing ->
+            UI.toDocument
+                { title = model.room.name
+                , body =
+                    [ navBar { title = model.room.name, playerName = "" }
+                    , joinForm model.room model.playerName
                     ]
                 }
 

@@ -53,7 +53,10 @@ update key msg model =
                     "a0fd1422-abd9-434e-9d7c-883294b2992c"
             in
             ( model
-            , API.joinRoom { room = room, playerName = model.playerName }
+            , Cmd.batch
+                [ API.joinRoom { room = room }
+                , API.newProfile { playerName = model.playerName }
+                ]
             )
 
         JoinedRoom room ->

@@ -29,23 +29,26 @@ var app = Elm.Main.init({
 })
 
 app.ports.joinRoom.subscribe(options => {
-    let channel = socket.channel(
-        "room:" + options.room,
-        {playerName: options.playerName}
-    )
+    let channel = socket.channel("room:" + options.room, {})
     let presences = {}
+    channel.on("presence_state", state => {
+        console.log("presence state", state)
+        presences = Presence.syncState(presences, state)
+        app.ports.gotPresence.send(presences)
+    })
+    channel.on("presence_diff", diff => {
+        console.log("presence diff", diff)
+        presences = Presence.syncDiff(presences, diff)
+        app.ports.gotPresence.send(presences)
+    })
+    app.ports.newProfile.subscribe(profile => {
+        channel.push("new_profile", { "name": profile.playerName })
+    })
     channel.join()
         .receive("ok", resp => {
             console.log("Joined successfully", resp);
             app.ports.joinedRoom.send(options.room);
         })
         .receive("error", resp => { console.log("Unable to join", resp) })
-    channel.on("presence_state", state => {
-        presences = Presence.syncState(presences, state)
-        app.ports.gotPresence.send(presences)
-    })
-    channel.on("presence_diff", diff => {
-        presences = Presence.syncDiff(presences, diff)
-        app.ports.gotPresence.send(presences)
-    })
+
 })
