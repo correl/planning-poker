@@ -86,13 +86,7 @@ updateUrl url model =
                         (Room.init
                             { id = id
                             , player = model.player
-                            , roomName =
-                                case String.trim entryModel.roomName of
-                                    "" ->
-                                        "Planning Poker"
-
-                                    trimmed ->
-                                        trimmed
+                            , roomName = "Planning Poker"
                             , playerName = entryModel.playerName
                             }
                         )
