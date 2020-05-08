@@ -34,12 +34,14 @@ defmodule PlanningpokerWeb.RoomChannel do
       socket.assigns.room_id,
       value
     )
-    # Trigger a presence update so clients receive the vote
-    {:ok, _} = Presence.update(
-      socket,
-      socket.assigns.player_id,
-      fn x -> x end
-    )
+    broadcast!(socket, "vote",
+      %{"player" => socket.assigns.player_id,
+        "vote" => value})
+    {:noreply, socket}
+  end
+  def handle_in("reset", _, socket) do
+    Db.clear_votes(socket.assigns.room_id)
+    broadcast!(socket, "reset", %{})
     {:noreply, socket}
   end
   def handle_in(_event, _data, socket) do

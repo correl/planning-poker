@@ -45,11 +45,20 @@ app.ports.joinRoom.subscribe(options => {
         presences = Presence.syncDiff(presences, diff)
         app.ports.gotPresence.send(presences)
     })
+    channel.on("vote", vote => {
+        app.ports.gotVote.send(vote)
+    })
+    channel.on("reset", reset => {
+        app.ports.gotReset.send(reset)
+    })
     app.ports.newProfile.subscribe(profile => {
         channel.push("new_profile", { "name": profile.playerName })
     })
     app.ports.vote.subscribe(value => {
         channel.push("vote", value)
+    })
+    app.ports.reset.subscribe(_ => {
+        channel.push("reset", null)
     })
     channel.join()
         .receive("ok", resp => {

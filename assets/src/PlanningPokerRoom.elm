@@ -42,6 +42,8 @@ type Msg
     | PlayerNameChanged String
     | JoinRoom
     | GotPresence Decode.Value
+    | GotVote Decode.Value
+    | GotReset
 
 
 type alias Room =
@@ -123,17 +125,8 @@ update key msg model =
             )
 
         Reset ->
-            ( { model
-                | room =
-                    { room
-                        | players =
-                            Dict.map
-                                (\k v -> { v | vote = Nothing })
-                                room.players
-                    }
-                , showVotes = False
-              }
-            , Cmd.none
+            ( model
+            , API.reset ()
             )
 
         PlayerNameChanged newName ->
@@ -155,6 +148,39 @@ update key msg model =
 
                 Err _ ->
                     ( model, Cmd.none )
+
+        GotVote value ->
+            case Decode.decodeValue voteDecoder value of
+                Ok ( player, vote ) ->
+                    let
+                        newPlayers =
+                            Dict.update player
+                                (Maybe.map (\p -> { p | vote = Just vote }))
+                                room.players
+
+                        newRoom =
+                            { room | players = newPlayers }
+                    in
+                    ( { model | room = newRoom }, Cmd.none )
+
+                _ ->
+                    ( model, Cmd.none )
+
+        GotReset ->
+            let
+                newPlayers =
+                    room.players
+                        |> Dict.map (\k v -> { v | vote = Nothing })
+
+                newRoom =
+                    { room | players = newPlayers }
+            in
+            ( { model
+                | showVotes = False
+                , room = newRoom
+              }
+            , Cmd.none
+            )
 
 
 view : Model -> Document Msg
@@ -352,7 +378,11 @@ joinForm room playerName =
 
 subscriptions : Sub Msg
 subscriptions =
-    API.gotPresence GotPresence
+    Sub.batch
+        [ API.gotPresence GotPresence
+        , API.gotReset (\_ -> GotReset)
+        , API.gotVote GotVote
+        ]
 
 
 playersDecoder : Decode.Decoder (Dict String Player)
@@ -364,3 +394,10 @@ playersDecoder =
                 (Decode.field "vote" (Decode.nullable Decode.string))
     in
     Decode.dict presence
+
+
+voteDecoder : Decode.Decoder ( String, String )
+voteDecoder =
+    Decode.map2 Tuple.pair
+        (Decode.field "player" Decode.string)
+        (Decode.field "vote" Decode.string)
