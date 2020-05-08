@@ -1,9 +1,12 @@
 defmodule PlanningpokerWeb.RoomChannel do
+  require Logger
   use Phoenix.Channel
   alias PlanningpokerWeb.Presence
+  alias Planningpoker.Db
 
   def join("room:" <> room_id, params, socket) do
     send(self(), :after_join)
+    Logger.debug "Proc: #{inspect self()}, Socket: #{inspect socket}"
     {:ok, %{channel: room_id, topic: "Planning Poker"},
      socket
      |> assign(:room_id, room_id)
@@ -14,12 +17,11 @@ defmodule PlanningpokerWeb.RoomChannel do
     {:noreply, socket}
   end
   def handle_in("new_profile", %{"name" => name}, socket) do
+    Db.save_name(socket.assigns.player_id, name)
     {:ok, _} = Presence.track(
       socket,
-      "player:#{socket.assigns.player_id}",
-      %{
-        name: name
-      }
+      socket.assigns.player_id,
+      %{}
     )
     {:noreply, socket}
   end

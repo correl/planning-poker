@@ -364,25 +364,11 @@ subscriptions =
     API.gotPresence GotPresence
 
 
-type alias Presence =
-    { metas : List PresenceMeta }
-
-
-type alias PresenceMeta =
-    { name : String
-    , online_at : String
-    , phx_ref : String
-    }
-
-
 playersDecoder : Decode.Decoder (Dict String Player)
 playersDecoder =
     let
-        meta =
-            Decode.field "name" Decode.string
-
         presence =
-            Decode.field "metas" (Decode.index 0 meta)
+            Decode.field "name" Decode.string
 
         toPlayer id name =
             { level = Participant
