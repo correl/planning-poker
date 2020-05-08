@@ -11,20 +11,20 @@ defmodule PlanningpokerWeb.Presence do
   alias Planningpoker.Db
 
   def fetch("room:" <> room, entries) do
-    users =
+    players =
       entries
       |> Map.keys()
-      |> Db.get_users()
-      |> Enum.into(%{})
+      |> Db.get_players(room)
+      |> Enum.into(%{}, fn {{u, _r}, v} -> {u, v} end)
     votes =
-      users
+      entries
       |> Map.keys()
       |> Db.get_votes(room)
       |> Enum.into(%{}, fn {{u, _r}, v} -> {u, v} end)
 
     for {key, %{metas: metas}} <- entries, into: %{} do
       {key, %{metas: metas,
-              name: users[key],
+              name: players[key],
               vote: Map.get(votes, key)}}
     end
   end

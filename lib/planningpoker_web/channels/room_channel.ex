@@ -17,7 +17,10 @@ defmodule PlanningpokerWeb.RoomChannel do
     {:noreply, socket}
   end
   def handle_in("new_profile", %{"name" => name}, socket) do
-    Db.save_name(socket.assigns.player_id, name)
+    Db.save_player(
+      socket.assigns.player_id,
+      socket.assigns.room_id,
+      name)
     {:ok, _} = Presence.track(
       socket,
       socket.assigns.player_id,
@@ -31,7 +34,7 @@ defmodule PlanningpokerWeb.RoomChannel do
       socket.assigns.room_id,
       value
     )
-    votes = Db.get_votes([socket.assigns.player_id], socket.assigns.room_id)
+    # Trigger a presence update so clients receive the vote
     {:ok, _} = Presence.update(
       socket,
       socket.assigns.player_id,
