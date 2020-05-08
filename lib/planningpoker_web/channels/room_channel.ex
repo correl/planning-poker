@@ -25,4 +25,21 @@ defmodule PlanningpokerWeb.RoomChannel do
     )
     {:noreply, socket}
   end
+  def handle_in("vote", value, socket) do
+    Db.save_vote(
+      socket.assigns.player_id,
+      socket.assigns.room_id,
+      value
+    )
+    votes = Db.get_votes([socket.assigns.player_id], socket.assigns.room_id)
+    {:ok, _} = Presence.update(
+      socket,
+      socket.assigns.player_id,
+      fn x -> x end
+    )
+    {:noreply, socket}
+  end
+  def handle_in(_event, _data, socket) do
+    {:noreply, socket}
+  end
 end

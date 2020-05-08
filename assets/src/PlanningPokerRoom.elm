@@ -113,17 +113,8 @@ update key msg model =
     in
     case msg of
         Vote value ->
-            ( { model
-                | room =
-                    { room
-                        | players =
-                            Dict.update
-                                model.player
-                                (Maybe.map (\p -> { p | vote = Just value }))
-                                room.players
-                    }
-              }
-            , Cmd.none
+            ( model
+            , API.vote value
             )
 
         Reveal ->
@@ -368,13 +359,8 @@ playersDecoder : Decode.Decoder (Dict String Player)
 playersDecoder =
     let
         presence =
-            Decode.field "name" Decode.string
-
-        toPlayer id name =
-            { level = Participant
-            , name = name
-            , vote = Nothing
-            }
+            Decode.map2 (Player Participant)
+                (Decode.field "name" Decode.string)
+                (Decode.field "vote" (Decode.nullable Decode.string))
     in
     Decode.dict presence
-        |> Decode.map (Dict.map toPlayer)

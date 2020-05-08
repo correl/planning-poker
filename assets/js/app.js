@@ -27,7 +27,7 @@ socket.connect()
 var app = Elm.Main.init({
     node: document.getElementById("elm-main"),
     flags: {
-        player: "player:" + player_id,
+        player: player_id,
         room: room_id
     }
 })
@@ -47,6 +47,9 @@ app.ports.joinRoom.subscribe(options => {
     })
     app.ports.newProfile.subscribe(profile => {
         channel.push("new_profile", { "name": profile.playerName })
+    })
+    app.ports.vote.subscribe(value => {
+        channel.push("vote", value)
     })
     channel.join()
         .receive("ok", resp => {

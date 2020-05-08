@@ -8,6 +8,7 @@ defmodule Planningpoker.Db do
 
   def init(_) do
     :ets.new(:users, [:named_table, :public])
+    :ets.new(:votes, [:named_table, :public])
     {:ok, %{}}
   end
 
@@ -16,7 +17,24 @@ defmodule Planningpoker.Db do
     :ets.insert(:users, {user, name})
   end
 
+  def save_vote(user, room, value) do
+    Logger.debug("Storing vote of #{value} for player #{user} in room #{room}")
+    :ets.insert(:votes, {{user, room}, value})
+  end
+
   def get_users(keys) do
-    :ets.select(:users, (for key <- keys, do: {{key, :_}, [], [:"$_"]}))
+    match = for key <- keys do
+      {{key, :_}, [], [:"$_"]}
+    end
+    Logger.debug("Getting users: #{inspect match}")
+    :ets.select(:users, match)
+  end
+
+  def get_votes(users, room) do
+    match = for user <- users do
+      {{{user, room}, :_}, [], [:"$_"]}
+    end
+    Logger.debug("Getting votes: #{inspect match}")
+    :ets.select(:votes, match)
   end
 end

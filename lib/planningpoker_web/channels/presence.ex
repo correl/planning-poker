@@ -10,15 +10,23 @@ defmodule PlanningpokerWeb.Presence do
   require Logger
   alias Planningpoker.Db
 
-  def fetch(_topic, entries) do
+  def fetch("room:" <> room, entries) do
     users =
       entries
       |> Map.keys()
       |> Db.get_users()
       |> Enum.into(%{})
+    votes =
+      users
+      |> Map.keys()
+      |> Db.get_votes(room)
+      |> Enum.into(%{}, fn {{u, _r}, v} -> {u, v} end)
 
     for {key, %{metas: metas}} <- entries, into: %{} do
-      {key, %{metas: metas, name: users[key]}}
+      {key, %{metas: metas,
+              name: users[key],
+              vote: Map.get(votes, key)}}
     end
   end
+  def fetch(_topic, entries), do: entries
 end
