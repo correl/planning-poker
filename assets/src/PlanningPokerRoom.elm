@@ -121,12 +121,12 @@ update key msg model =
 
         Reveal ->
             ( { model | showVotes = True }
-            , Cmd.none
+            , API.reveal
             )
 
         Reset ->
             ( model
-            , API.reset ()
+            , API.reset
             )
 
         PlayerNameChanged newName ->

@@ -6,11 +6,9 @@ defmodule PlanningpokerWeb.RoomChannel do
 
   def join("room:" <> room_id, params, socket) do
     send(self(), :after_join)
-    Logger.debug "Proc: #{inspect self()}, Socket: #{inspect socket}"
     {:ok, %{channel: room_id, topic: "Planning Poker"},
      socket
-     |> assign(:room_id, room_id)
-     |> assign(:player_name, params["playerName"])}
+     |> assign(:room_id, room_id)}
   end
   def handle_info(:after_join, socket) do
     push(socket, "presence_state", Presence.list(socket))
@@ -28,7 +26,7 @@ defmodule PlanningpokerWeb.RoomChannel do
     )
     {:noreply, socket}
   end
-  def handle_in("vote", value, socket) do
+  def handle_in("vote", %{"value" => value}, socket) do
     Db.save_vote(
       socket.assigns.player_id,
       socket.assigns.room_id,

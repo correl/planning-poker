@@ -3,34 +3,79 @@ port module PlanningPokerAPI exposing
     , gotReset
     , gotVote
     , joinRoom
-    , joinedRoom
     , newProfile
     , reset
+    , reveal
     , vote
     )
 
-import Json.Decode exposing (Value)
+import Json.Decode as Decode
+import Json.Encode as Encode
+
+
+type RoomAction
+    = NewProfile { playerName : String }
+    | Vote String
+    | ResetGame
+    | RevealVotes
 
 
 port joinRoom : { room : String } -> Cmd msg
 
 
-port newProfile : { playerName : String } -> Cmd msg
+port roomActions : Encode.Value -> Cmd msg
 
 
-port vote : String -> Cmd msg
+newProfile : { playerName : String } -> Cmd msg
+newProfile =
+    NewProfile >> encodeAction >> roomActions
 
 
-port reset : () -> Cmd msg
+vote : String -> Cmd msg
+vote =
+    Vote >> encodeAction >> roomActions
 
 
-port joinedRoom : (String -> msg) -> Sub msg
+reset : Cmd msg
+reset =
+    ResetGame |> encodeAction >> roomActions
 
 
-port gotPresence : (Value -> msg) -> Sub msg
+reveal : Cmd msg
+reveal =
+    RevealVotes |> encodeAction >> roomActions
 
 
-port gotVote : (Value -> msg) -> Sub msg
+encodeAction : RoomAction -> Encode.Value
+encodeAction action =
+    let
+        wrap : String -> Encode.Value -> Encode.Value
+        wrap name data =
+            Encode.object
+                [ ( "type", Encode.string name )
+                , ( "data", data )
+                ]
+    in
+    case action of
+        NewProfile { playerName } ->
+            wrap "new_profile"
+                (Encode.object [ ( "name", Encode.string playerName ) ])
+
+        Vote value ->
+            wrap "vote"
+                (Encode.object [ ( "value", Encode.string value ) ])
+
+        ResetGame ->
+            wrap "reset" (Encode.object [])
+
+        RevealVotes ->
+            wrap "reveal" (Encode.object [])
 
 
-port gotReset : (Value -> msg) -> Sub msg
+port gotPresence : (Decode.Value -> msg) -> Sub msg
+
+
+port gotVote : (Decode.Value -> msg) -> Sub msg
+
+
+port gotReset : (Decode.Value -> msg) -> Sub msg

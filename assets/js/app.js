@@ -34,6 +34,8 @@ var app = Elm.Main.init({
 
 app.ports.joinRoom.subscribe(options => {
     let channel = socket.channel("room:" + options.room, {})
+
+    // Presence events
     let presences = {}
     channel.on("presence_state", state => {
         console.log("presence state", state)
@@ -45,21 +47,21 @@ app.ports.joinRoom.subscribe(options => {
         presences = Presence.syncDiff(presences, diff)
         app.ports.gotPresence.send(presences)
     })
-    channel.on("vote", vote => {
-        app.ports.gotVote.send(vote)
+
+    // Incoming room events
+    const handle = (type) => (data) =>
+          app.ports.roomEvents.send({
+              "type": type,
+              "data": data
+          })
+    ["vote", "reset"]
+        .forEach(event => channel.on(event, handle(event)))
+
+    // Outgoing room events
+    app.ports.roomActions.subscribe(action => {
+        channel.push(action.type, action.data)
     })
-    channel.on("reset", reset => {
-        app.ports.gotReset.send(reset)
-    })
-    app.ports.newProfile.subscribe(profile => {
-        channel.push("new_profile", { "name": profile.playerName })
-    })
-    app.ports.vote.subscribe(value => {
-        channel.push("vote", value)
-    })
-    app.ports.reset.subscribe(_ => {
-        channel.push("reset", null)
-    })
+
     channel.join()
         .receive("ok", resp => {
             console.log("Joined successfully", resp);
