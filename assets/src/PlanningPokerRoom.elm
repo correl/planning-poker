@@ -203,7 +203,7 @@ view model =
                 { title = model.room.name
                 , body =
                     [ navBar { title = model.room.name, playerName = playerName }
-                    , viewRoom model.player model.room model.showVotes
+                    , viewRoom model
                     ]
                 }
 
@@ -217,11 +217,11 @@ view model =
                 }
 
 
-viewRoom : String -> Room -> Bool -> Element Msg
-viewRoom player room showVotes =
+viewRoom : Model -> Element Msg
+viewRoom model =
     let
         myVote =
-            Dict.get player room.players
+            Dict.get model.player model.room.players
                 |> Maybe.andThen .vote
     in
     column [ width fill, spacing 20 ]
@@ -230,9 +230,9 @@ viewRoom player room showVotes =
             [ el [ width (fillPortion 3), alignTop ] <|
                 viewCards myVote
             , el [ width (fillPortion 1), alignTop ] <|
-                viewPlayers (Dict.values room.players) showVotes
+                viewPlayers (Dict.values model.room.players) model.showVotes
             ]
-        , moderatorTools
+        , moderatorTools model
         ]
 
 
@@ -320,12 +320,12 @@ viewPlayers playerList showVotes =
         }
 
 
-moderatorTools : Element Msg
-moderatorTools =
+moderatorTools : Model -> Element Msg
+moderatorTools model =
     row [ centerX, spacing 20 ]
         [ UI.actionButton
             [ centerX ]
-            { isActive = True
+            { isActive = not model.showVotes
             , onPress = Reveal
             , label = text "Reveal"
             }
