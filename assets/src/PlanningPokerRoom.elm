@@ -282,7 +282,7 @@ viewCards selected =
                 , label = el [ centerX, centerY ] (text value)
                 }
     in
-    row [ width fill, spacing 30 ] <|
+    wrappedRow [ centerX, width fill, spacing 30] <|
         List.map card [ "1", "3", "5", "8", "13" ]
 
 
