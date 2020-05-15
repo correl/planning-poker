@@ -49,13 +49,8 @@ app.ports.joinRoom.subscribe(options => {
     })
 
     // Incoming room events
-    const handle = (type) => (data) =>
-          app.ports.roomEvents.send({
-              "type": type,
-              "data": data
-          })
-    ["vote", "reset"]
-        .forEach(event => channel.on(event, handle(event)))
+    channel.on("vote", app.ports.gotVote.send)
+    channel.on("reset", app.ports.gotReset.send)
 
     // Outgoing room events
     app.ports.roomActions.subscribe(action => {
