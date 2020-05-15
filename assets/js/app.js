@@ -51,6 +51,7 @@ app.ports.joinRoom.subscribe(options => {
     // Incoming room events
     channel.on("vote", app.ports.gotVote.send)
     channel.on("reset", app.ports.gotReset.send)
+    channel.on("reveal", app.ports.gotReveal.send)
 
     // Outgoing room events
     app.ports.roomActions.subscribe(action => {

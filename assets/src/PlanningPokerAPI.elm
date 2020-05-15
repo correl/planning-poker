@@ -1,6 +1,7 @@
 port module PlanningPokerAPI exposing
     ( gotPresence
     , gotReset
+    , gotReveal
     , gotVote
     , joinRoom
     , newProfile
@@ -76,6 +77,9 @@ port gotPresence : (Decode.Value -> msg) -> Sub msg
 
 
 port gotVote : (Decode.Value -> msg) -> Sub msg
+
+
+port gotReveal : (Decode.Value -> msg) -> Sub msg
 
 
 port gotReset : (Decode.Value -> msg) -> Sub msg

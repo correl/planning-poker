@@ -43,6 +43,7 @@ type Msg
     | JoinRoom
     | GotPresence Decode.Value
     | GotVote Decode.Value
+    | GotReveal
     | GotReset
 
 
@@ -120,7 +121,7 @@ update key msg model =
             )
 
         Reveal ->
-            ( { model | showVotes = True }
+            ( model
             , API.reveal
             )
 
@@ -165,6 +166,11 @@ update key msg model =
 
                 _ ->
                     ( model, Cmd.none )
+
+        GotReveal ->
+            ( { model | showVotes = True }
+            , Cmd.none
+            )
 
         GotReset ->
             let
@@ -381,6 +387,7 @@ subscriptions =
     Sub.batch
         [ API.gotPresence GotPresence
         , API.gotReset (\_ -> GotReset)
+        , API.gotReveal (\_ -> GotReveal)
         , API.gotVote GotVote
         ]
 

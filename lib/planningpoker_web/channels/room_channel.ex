@@ -42,6 +42,10 @@ defmodule PlanningpokerWeb.RoomChannel do
     broadcast!(socket, "reset", %{})
     {:noreply, socket}
   end
+  def handle_in("reveal", _, socket) do
+    broadcast!(socket, "reveal", %{})
+    {:noreply, socket}
+  end
   def handle_in(_event, _data, socket) do
     {:noreply, socket}
   end
