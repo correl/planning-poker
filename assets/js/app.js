@@ -28,7 +28,9 @@ var app = Elm.Main.init({
     node: document.getElementById("elm-main"),
     flags: {
         player: player_id,
-        room: room_id
+        room: room_id,
+        width: window.innerWidth,
+        height: window.innerHeight
     }
 })
 

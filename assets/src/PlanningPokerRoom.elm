@@ -189,9 +189,13 @@ update key msg model =
             )
 
 
-view : Model -> Document Msg
-view model =
+view : { height : Int, width : Int } -> Model -> Document Msg
+view dimensions model =
     let
+        device =
+            classifyDevice dimensions
+                |> Debug.log "device"
+
         playerName =
             Dict.get model.player model.room.players
                 |> Maybe.map .name
@@ -203,7 +207,7 @@ view model =
                 { title = model.room.name
                 , body =
                     [ navBar { title = model.room.name, playerName = playerName }
-                    , viewRoom model
+                    , viewRoom device model
                     ]
                 }
 
@@ -217,24 +221,34 @@ view model =
                 }
 
 
-viewRoom : Model -> Element Msg
-viewRoom model =
+viewRoom : Device -> Model -> Element Msg
+viewRoom device model =
     let
         myVote =
             Dict.get model.player model.room.players
                 |> Maybe.andThen .vote
     in
-    column [ width fill, spacing 20 ]
-        [ row
-            [ width fill ]
-            [ el [ width (fillPortion 3), alignTop ] <|
-                viewCards myVote
-            , column [ width (fillPortion 1), alignTop, spacing 50 ] <|
+    case device.class of
+        Phone ->
+            column [ width fill, spacing 20 ]
                 [ viewPlayers (Dict.values model.room.players) model.showVotes
+                , el [ width (fillPortion 3), alignTop ] <|
+                    viewCards myVote
                 , moderatorTools model
                 ]
-            ]
-        ]
+
+        _ ->
+            column [ width fill, spacing 20 ]
+                [ row
+                    [ width fill ]
+                    [ el [ width (fillPortion 3), alignTop ] <|
+                        viewCards myVote
+                    , column [ width (fillPortion 1), alignTop, spacing 50 ] <|
+                        [ viewPlayers (Dict.values model.room.players) model.showVotes
+                        , moderatorTools model
+                        ]
+                    ]
+                ]
 
 
 navBar : { title : String, playerName : String } -> Element Msg

@@ -1,6 +1,7 @@
 module Main exposing (main)
 
 import Browser exposing (Document)
+import Browser.Events as Events
 import Browser.Navigation as Nav
 import Html
 import PlanningPokerEntry as Entry
@@ -13,6 +14,8 @@ import Url.Parser as Parser exposing ((</>), Parser, s, string)
 type alias Flags =
     { player : String
     , room : String
+    , height : Int
+    , width : Int
     }
 
 
@@ -21,6 +24,7 @@ type alias Model =
     , key : Nav.Key
     , player : String
     , room : String
+    , dimensions : { width : Int, height : Int }
     }
 
 
@@ -40,15 +44,17 @@ type Msg
     | ClickedLink Browser.UrlRequest
     | EntryMsg Entry.Msg
     | RoomMsg Room.Msg
+    | WindowResized Int Int
 
 
 init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init { player, room } url key =
+init { player, room, width, height } url key =
     updateUrl url
         { page = NotFound
         , key = key
         , player = player
         , room = room
+        , dimensions = { width = width, height = height }
         }
 
 
@@ -66,6 +72,15 @@ update msg model =
 
         ( RoomMsg roomMsg, RoomPage roomModel ) ->
             toRoom model (Room.update model.key roomMsg roomModel)
+
+        ( WindowResized width height, _ ) ->
+            let
+                newDimensions =
+                    { width = width, height = height }
+            in
+            ( { model | dimensions = newDimensions }
+            , Cmd.none
+            )
 
         _ ->
             ( model, Cmd.none )
@@ -136,7 +151,7 @@ view model =
             mapDocument EntryMsg <| Entry.view entryModel
 
         RoomPage roomModel ->
-            mapDocument RoomMsg <| Room.view roomModel
+            mapDocument RoomMsg <| Room.view model.dimensions roomModel
 
         NotFound ->
             NotFound.view
@@ -158,4 +173,5 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch
         [ Sub.map RoomMsg Room.subscriptions
+        , Events.onResize WindowResized
         ]
