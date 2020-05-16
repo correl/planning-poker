@@ -229,10 +229,11 @@ viewRoom model =
             [ width fill ]
             [ el [ width (fillPortion 3), alignTop ] <|
                 viewCards myVote
-            , el [ width (fillPortion 1), alignTop ] <|
-                viewPlayers (Dict.values model.room.players) model.showVotes
+            , column [ width (fillPortion 1), alignTop, spacing 50 ] <|
+                [ viewPlayers (Dict.values model.room.players) model.showVotes
+                , moderatorTools model
+                ]
             ]
-        , moderatorTools model
         ]
 
 
