@@ -282,8 +282,17 @@ viewCards selected =
                 , label = el [ centerX, centerY ] (text value)
                 }
     in
-    wrappedRow [ centerX, width fill, spacing 30] <|
-        List.map card [ "1", "3", "5", "8", "13" ]
+    wrappedRow [ centerX, width fill, spacing 30 ] <|
+        List.map card
+            [ "1"
+            , "2"
+            , "3"
+            , "5"
+            , "8"
+            , "13"
+            , "?"
+            , "☕"
+            ]
 
 
 viewPlayers : List Player -> Bool -> Element Msg
