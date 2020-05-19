@@ -31,6 +31,7 @@ colors =
 
 fontSizes =
     { huge = 80
+    , big = 30
     , normal = 18
     }
 

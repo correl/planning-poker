@@ -319,7 +319,15 @@ viewPlayers playerList showVotes =
               , width = fill
               , view =
                     \player ->
-                        el [ padding 10 ]
+                        el
+                            [ padding 10
+                            , Border.widthEach
+                                { bottom = 1
+                                , left = 0
+                                , right = 0
+                                , top = 0
+                                }
+                            ]
                             (text player.name)
               }
             , { header = none
@@ -336,7 +344,14 @@ viewPlayers playerList showVotes =
                         in
                         el
                             [ padding 10
+                            , Border.widthEach
+                                { bottom = 1
+                                , left = 0
+                                , right = 0
+                                , top = 0
+                                }
                             , Font.alignRight
+                            , Font.bold
                             ]
                             (text <| Maybe.withDefault " " vote)
               }
