@@ -233,7 +233,7 @@ viewRoom device model =
             column [ width fill, spacing 20 ]
                 [ viewPlayers (Dict.values model.room.players) model.showVotes
                 , el [ width (fillPortion 3), alignTop ] <|
-                    viewCards myVote
+                    viewCards model myVote
                 , moderatorTools model
                 ]
 
@@ -242,7 +242,7 @@ viewRoom device model =
                 [ row
                     [ width fill ]
                     [ el [ width (fillPortion 3), alignTop ] <|
-                        viewCards myVote
+                        viewCards model myVote
                     , column [ width (fillPortion 1), alignTop, spacing 50 ] <|
                         [ viewPlayers (Dict.values model.room.players) model.showVotes
                         , moderatorTools model
@@ -273,9 +273,19 @@ navBar { title, playerName } =
         ]
 
 
-viewCards : Maybe String -> Element Msg
-viewCards selected =
+viewCards : Model -> Maybe String -> Element Msg
+viewCards model selected =
     let
+        enabled =
+            not model.showVotes
+
+        selectedColor =
+            if enabled then
+                UI.colors.selected
+
+            else
+                UI.colors.disabled
+
         card value =
             Input.button
                 [ width (px 100)
@@ -287,13 +297,18 @@ viewCards selected =
                 , Border.rounded 10
                 , Background.color <|
                     if selected == Just value then
-                        UI.colors.selected
+                        selectedColor
 
                     else
                         UI.colors.background
                 , Font.size 50
                 ]
-                { onPress = Just (Vote value)
+                { onPress =
+                    if enabled then
+                        Just (Vote value)
+
+                    else
+                        Nothing
                 , label = el [ centerX, centerY ] (text value)
                 }
     in
