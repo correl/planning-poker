@@ -1,5 +1,6 @@
 port module PlanningPokerAPI exposing
-    ( gotPresence
+    ( gotPresenceDiff
+    , gotPresenceState
     , gotReset
     , gotReveal
     , gotVote
@@ -73,7 +74,10 @@ encodeAction action =
             wrap "reveal" (Encode.object [])
 
 
-port gotPresence : (Decode.Value -> msg) -> Sub msg
+port gotPresenceState : (Decode.Value -> msg) -> Sub msg
+
+
+port gotPresenceDiff : (Decode.Value -> msg) -> Sub msg
 
 
 port gotVote : (Decode.Value -> msg) -> Sub msg

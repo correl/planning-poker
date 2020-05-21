@@ -38,17 +38,8 @@ app.ports.joinRoom.subscribe(options => {
     let channel = socket.channel("room:" + options.room, {})
 
     // Presence events
-    let presences = {}
-    channel.on("presence_state", state => {
-        console.log("presence state", state)
-        presences = Presence.syncState(presences, state)
-        app.ports.gotPresence.send(presences)
-    })
-    channel.on("presence_diff", diff => {
-        console.log("presence diff", diff)
-        presences = Presence.syncDiff(presences, diff)
-        app.ports.gotPresence.send(presences)
-    })
+    channel.on("presence_state", app.ports.gotPresenceState.send)
+    channel.on("presence_diff", app.ports.gotPresenceDiff.send)
 
     // Incoming room events
     channel.on("vote", app.ports.gotVote.send)

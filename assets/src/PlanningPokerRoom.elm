@@ -41,10 +41,23 @@ type Msg
     | Reveal
     | PlayerNameChanged String
     | JoinRoom
-    | GotPresence Decode.Value
+    | GotPresence Presence
+    | GotPresenceDiff Decode.Value
     | GotVote Decode.Value
     | GotReveal
     | GotReset
+
+
+type Presence
+    = PresenceState (Dict String Player)
+    | PresenceDiff (Diff (Dict String Player))
+    | PresenceError Decode.Error
+
+
+type alias Diff a =
+    { joins : a
+    , leaves : a
+    }
 
 
 type alias Room =
@@ -138,17 +151,30 @@ update key msg model =
             , API.newProfile { playerName = model.playerName }
             )
 
-        GotPresence value ->
-            case Decode.decodeValue playersDecoder value of
-                Ok players ->
-                    let
-                        newRoom =
-                            { room | players = players }
-                    in
-                    ( { model | room = newRoom }, Cmd.none )
+        GotPresence (PresenceState players) ->
+            let
+                newRoom =
+                    { room | players = players }
+            in
+            ( { model | room = newRoom }, Cmd.none )
 
-                Err _ ->
-                    ( model, Cmd.none )
+        GotPresence (PresenceDiff { joins, leaves }) ->
+            let
+                newPlayers =
+                    room.players
+                        |> Dict.filter (\id _ -> not (Dict.member id leaves))
+                        |> Dict.union joins
+
+                newRoom =
+                    { room | players = newPlayers }
+            in
+            ( { model | room = newRoom }, Cmd.none )
+
+        GotPresence _ ->
+            ( model, Cmd.none )
+
+        GotPresenceDiff _ ->
+            ( model, Cmd.none )
 
         GotVote value ->
             case Decode.decodeValue voteDecoder value of
@@ -194,7 +220,6 @@ view dimensions model =
     let
         device =
             classifyDevice dimensions
-                |> Debug.log "device"
 
         playerName =
             Dict.get model.player model.room.players
@@ -439,11 +464,39 @@ joinForm room playerName =
 subscriptions : Sub Msg
 subscriptions =
     Sub.batch
-        [ API.gotPresence GotPresence
+        [ API.gotPresenceState (decodePresenceState >> GotPresence)
+        , API.gotPresenceDiff (decodePresenceDiff >> GotPresence)
         , API.gotReset (\_ -> GotReset)
         , API.gotReveal (\_ -> GotReveal)
         , API.gotVote GotVote
         ]
+
+
+decodePresenceState : Decode.Value -> Presence
+decodePresenceState value =
+    case Decode.decodeValue playersDecoder value of
+        Ok players ->
+            PresenceState players
+
+        Err error ->
+            PresenceError error
+
+
+decodePresenceDiff : Decode.Value -> Presence
+decodePresenceDiff value =
+    let
+        diffDecoder =
+            Decode.map PresenceDiff <|
+                Decode.map2 Diff
+                    (Decode.field "joins" playersDecoder)
+                    (Decode.field "leaves" playersDecoder)
+    in
+    case Decode.decodeValue diffDecoder value of
+        Ok diff ->
+            diff
+
+        Err error ->
+            PresenceError error
 
 
 playersDecoder : Decode.Decoder (Dict String Player)
