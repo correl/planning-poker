@@ -41,9 +41,8 @@ type Msg
     | Reveal
     | PlayerNameChanged String
     | JoinRoom
-    | GotPresence Presence
-    | GotPresenceDiff Decode.Value
-    | GotVote Decode.Value
+    | GotPresence (Result Decode.Error Presence)
+    | GotVote (Result Decode.Error ReceivedVote)
     | GotReveal
     | GotReset
 
@@ -51,7 +50,6 @@ type Msg
 type Presence
     = PresenceState (Dict String Player)
     | PresenceDiff (Diff (Dict String Player))
-    | PresenceError Decode.Error
 
 
 type alias Diff a =
@@ -71,6 +69,12 @@ type alias Player =
     { level : UserLevel
     , name : String
     , vote : Maybe String
+    }
+
+
+type alias ReceivedVote =
+    { player : String
+    , value : String
     }
 
 
@@ -151,14 +155,14 @@ update key msg model =
             , API.newProfile { playerName = model.playerName }
             )
 
-        GotPresence (PresenceState players) ->
+        GotPresence (Ok (PresenceState players)) ->
             let
                 newRoom =
                     { room | players = players }
             in
             ( { model | room = newRoom }, Cmd.none )
 
-        GotPresence (PresenceDiff { joins, leaves }) ->
+        GotPresence (Ok (PresenceDiff { joins, leaves })) ->
             let
                 newPlayers =
                     room.players
@@ -173,25 +177,20 @@ update key msg model =
         GotPresence _ ->
             ( model, Cmd.none )
 
-        GotPresenceDiff _ ->
+        GotVote (Ok { player, value }) ->
+            let
+                newPlayers =
+                    Dict.update player
+                        (Maybe.map (\p -> { p | vote = Just value }))
+                        room.players
+
+                newRoom =
+                    { room | players = newPlayers }
+            in
+            ( { model | room = newRoom }, Cmd.none )
+
+        GotVote (Err _) ->
             ( model, Cmd.none )
-
-        GotVote value ->
-            case Decode.decodeValue voteDecoder value of
-                Ok ( player, vote ) ->
-                    let
-                        newPlayers =
-                            Dict.update player
-                                (Maybe.map (\p -> { p | vote = Just vote }))
-                                room.players
-
-                        newRoom =
-                            { room | players = newPlayers }
-                    in
-                    ( { model | room = newRoom }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
 
         GotReveal ->
             ( { model | showVotes = True }
@@ -468,35 +467,37 @@ subscriptions =
         , API.gotPresenceDiff (decodePresenceDiff >> GotPresence)
         , API.gotReset (\_ -> GotReset)
         , API.gotReveal (\_ -> GotReveal)
-        , API.gotVote GotVote
+        , API.gotVote (decodeVote >> GotVote)
         ]
 
 
-decodePresenceState : Decode.Value -> Presence
+decodePresenceState : Decode.Value -> Result Decode.Error Presence
 decodePresenceState value =
-    case Decode.decodeValue playersDecoder value of
-        Ok players ->
-            PresenceState players
-
-        Err error ->
-            PresenceError error
+    Decode.decodeValue playersDecoder value
+        |> Result.map PresenceState
 
 
-decodePresenceDiff : Decode.Value -> Presence
+decodePresenceDiff : Decode.Value -> Result Decode.Error Presence
 decodePresenceDiff value =
     let
-        diffDecoder =
+        decoder =
             Decode.map PresenceDiff <|
                 Decode.map2 Diff
                     (Decode.field "joins" playersDecoder)
                     (Decode.field "leaves" playersDecoder)
     in
-    case Decode.decodeValue diffDecoder value of
-        Ok diff ->
-            diff
+    Decode.decodeValue decoder value
 
-        Err error ->
-            PresenceError error
+
+decodeVote : Decode.Value -> Result Decode.Error ReceivedVote
+decodeVote value =
+    let
+        decoder =
+            Decode.map2 ReceivedVote
+                (Decode.field "player" Decode.string)
+                (Decode.field "vote" Decode.string)
+    in
+    Decode.decodeValue decoder value
 
 
 playersDecoder : Decode.Decoder (Dict String Player)
@@ -508,10 +509,3 @@ playersDecoder =
                 (Decode.field "vote" (Decode.nullable Decode.string))
     in
     Decode.dict presence
-
-
-voteDecoder : Decode.Decoder ( String, String )
-voteDecoder =
-    Decode.map2 Tuple.pair
-        (Decode.field "player" Decode.string)
-        (Decode.field "vote" Decode.string)
