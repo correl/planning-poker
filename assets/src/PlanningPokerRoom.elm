@@ -151,9 +151,13 @@ update key msg model =
             ( { model | playerName = newName }, Cmd.none )
 
         JoinRoom ->
-            ( { model | state = Playing }
-            , API.newProfile { playerName = model.playerName }
-            )
+            if not (String.isEmpty model.playerName) then
+                ( { model | state = Playing }
+                , API.newProfile { playerName = model.playerName }
+                )
+
+            else
+                ( model, Cmd.none )
 
         GotPresence (Ok (PresenceState players)) ->
             let
@@ -426,7 +430,12 @@ joinForm room playerName =
     column [ width fill, spacing 20, centerX, centerY ]
         [ UI.heroText [ centerX ] "Welcome!"
         , el [ centerX ] (text "Tell us who you are")
-        , Input.text [ centerX, width (px 300), Font.center ]
+        , Input.text
+            [ centerX
+            , width (px 300)
+            , Font.center
+            , UI.onEnter JoinRoom
+            ]
             { onChange = PlayerNameChanged
             , text = playerName
             , label = Input.labelHidden "Your name"

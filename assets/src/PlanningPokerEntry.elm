@@ -43,7 +43,11 @@ update key msg model =
             ( { model | playerName = newName }, Cmd.none )
 
         CreateRoom ->
-            ( model, Nav.pushUrl key ("/room/" ++ model.room) )
+            if not (String.isEmpty model.playerName) then
+                ( model, Nav.pushUrl key ("/room/" ++ model.room) )
+
+            else
+                ( model, Cmd.none )
 
 
 view : Model -> Document Msg
@@ -60,7 +64,7 @@ layout model =
             [ width fill, centerY, spacing 30 ]
             [ el [ centerX ] (text "Oh, hey!")
             , el [ centerX ] (text "Tell us who you are")
-            , Input.text [ centerX, width (px 300) ]
+            , Input.text [ centerX, width (px 300), UI.onEnter CreateRoom ]
                 { onChange = PlayerNameChanged
                 , text = model.playerName
                 , label = Input.labelHidden "Your name"
