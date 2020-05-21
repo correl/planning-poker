@@ -352,7 +352,7 @@ viewCards model selected =
 viewPlayers : List Player -> Bool -> Element Msg
 viewPlayers playerList showVotes =
     table [ width fill ]
-        { data = playerList
+        { data = List.sortBy .name playerList
         , columns =
             [ { header = none
               , width = fill
