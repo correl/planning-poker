@@ -35,6 +35,11 @@ defmodule Planningpoker.Db do
     :ets.select(:players, match)
   end
 
+  def remove_player(player, room) do
+    :ets.delete(:players, {player, room})
+    :ets.delete(:votes, {player, room})
+  end
+
   def clear_votes(room) do
     :ets.match_delete(:votes, {{:_, room}, :_})
     votes = :ets.match(:votes, {{:_, room}, :"$1"})

@@ -49,4 +49,10 @@ defmodule PlanningpokerWeb.RoomChannel do
   def handle_in(_event, _data, socket) do
     {:noreply, socket}
   end
+  def terminate(reason, socket) do
+    Db.remove_player(
+      socket.assigns.player_id,
+      socket.assigns.room_id
+    )
+  end
 end
