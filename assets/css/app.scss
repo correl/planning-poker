@@ -1,31 +1,8 @@
 /* This file is for your main application css. */
-@import "./phoenix.css";
 
-/* Alerts and form errors */
-.alert {
-  padding: 15px;
-  margin-bottom: 20px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-}
-.alert-info {
-  color: #31708f;
-  background-color: #d9edf7;
-  border-color: #bce8f1;
-}
-.alert-warning {
-  color: #8a6d3b;
-  background-color: #fcf8e3;
-  border-color: #faebcc;
-}
-.alert-danger {
-  color: #a94442;
-  background-color: #f2dede;
-  border-color: #ebccd1;
-}
-.alert p {
-  margin-bottom: 0;
-}
-.alert:empty {
-  display: none;
-}
+/* Hack to account for elm-ui failing to center wrapped elements
+   See: https://github.com/mdgriffith/elm-ui/issues/57
+ */
+.s.r > s:first-of-type.accx { flex-grow: 0 !important; }
+.s.r > s:last-of-type.accx { flex-grow: 0 !important; }
+.cx > .wrp { justify-content: center !important; }

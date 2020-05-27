@@ -5,17 +5,10 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Planningpoker · Phoenix Framework</title>
+    <link rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
     <script defer type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
-    <style>
-      /* Hack to account for elm-ui failing to center wrapped elements
-         See: https://github.com/mdgriffith/elm-ui/issues/57
-       */
-      .s.r > s:first-of-type.accx { flex-grow: 0 !important; }
-      .s.r > s:last-of-type.accx { flex-grow: 0 !important; }
-      .cx > .wrp { justify-content: center !important; }
-    </style>
   </head>
   <body>
-    <div id="elm-main"></div>
+    <%= @inner_content %>
   </body>
 </html>
