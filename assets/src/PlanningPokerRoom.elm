@@ -514,7 +514,11 @@ playersDecoder =
     let
         presence =
             Decode.map2 (Player Participant)
-                (Decode.field "name" Decode.string)
+                (Decode.field "name"
+                    (Decode.nullable Decode.string
+                        |> Decode.map (Maybe.withDefault "")
+                    )
+                )
                 (Decode.field "vote" (Decode.nullable Decode.string))
     in
     Decode.dict presence
