@@ -8,11 +8,13 @@ port module PlanningPokerAPI exposing
     , newProfile
     , reset
     , reveal
+    , updateTheme
     , vote
     )
 
 import Json.Decode as Decode
 import Json.Encode as Encode
+import PlanningPokerUI as UI
 
 
 type RoomAction
@@ -26,6 +28,9 @@ port joinRoom : { room : String } -> Cmd msg
 
 
 port roomActions : Encode.Value -> Cmd msg
+
+
+port saveTheme : String -> Cmd msg
 
 
 newProfile : { playerName : String } -> Cmd msg
@@ -72,6 +77,16 @@ encodeAction action =
 
         RevealVotes ->
             wrap "reveal" (Encode.object [])
+
+
+updateTheme : UI.Theme -> Cmd msg
+updateTheme theme =
+    case theme of
+        UI.Light ->
+            saveTheme "light"
+
+        UI.Dark ->
+            saveTheme "dark"
 
 
 port gotPresenceState : (Decode.Value -> msg) -> Sub msg

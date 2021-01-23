@@ -1,9 +1,13 @@
 module PlanningPokerUI exposing
-    ( actionButton
+    ( Theme(..)
+    , actionButton
     , colors
     , fontSizes
     , heroText
+    , navBar
     , onEnter
+    , textInput
+    , themePicker
     , toDocument
     )
 
@@ -16,20 +20,63 @@ import Html.Events
 import Json.Decode as Decode
 
 
-colors =
+type Theme
+    = Light
+    | Dark
+
+
+colors theme =
     let
-        primary =
-            blue
+        blue : Color
+        blue =
+            rgb255 100 100 255
+
+        lightGrey : Color
+        lightGrey =
+            rgb255 200 200 200
+
+        grey : Color
+        grey =
+            rgb255 50 50 50
+
+        darkGrey : Color
+        darkGrey =
+            rgb255 20 20 20
+
+        red : Color
+        red =
+            rgb255 255 100 100
+
+        white : Color
+        white =
+            rgb255 255 255 255
+
+        black : Color
+        black =
+            rgb255 0 0 0
     in
-    { primary = primary
-    , background = white
-    , selected = primary
-    , disabled = lightGrey
-    , errorBackground = red
-    , errorForeground = white
-    , text = black
-    , buttonText = white
-    }
+    case theme of
+        Light ->
+            { primary = blue
+            , background = white
+            , selected = blue
+            , disabled = lightGrey
+            , errorBackground = red
+            , errorForeground = white
+            , text = black
+            , buttonText = white
+            }
+
+        Dark ->
+            { primary = blue
+            , background = darkGrey
+            , selected = blue
+            , disabled = grey
+            , errorBackground = red
+            , errorForeground = white
+            , text = white
+            , buttonText = lightGrey
+            }
 
 
 fontSizes =
@@ -39,54 +86,56 @@ fontSizes =
     }
 
 
-blue : Color
-blue =
-    rgb255 100 100 255
+textInput :
+    Theme
+    -> List (Attribute msg)
+    ->
+        { onChange : String -> msg
+        , text : String
+        , label : Input.Label msg
+        , placeholder : Maybe (Input.Placeholder msg)
+        }
+    -> Element msg
+textInput theme attrs { onChange, text, label, placeholder } =
+    Input.text
+        (Font.color (colors theme).text
+            :: Background.color (colors theme).background
+            :: attrs
+        )
+        { onChange = onChange, text = text, label = label, placeholder = placeholder }
 
 
-lightGrey : Color
-lightGrey =
-    rgb255 200 200 200
-
-
-red : Color
-red =
-    rgb255 255 100 100
-
-
-white : Color
-white =
-    rgb255 255 255 255
-
-
-black : Color
-black =
-    rgb255 0 0 0
-
-
-actionButton :
-    List (Attribute msg)
+button :
+    Theme
+    -> List (Attribute msg)
     -> { isActive : Bool, onPress : msg, label : Element msg }
     -> Element msg
-actionButton attrs { isActive, onPress, label } =
+button theme attrs { isActive, onPress, label } =
     let
         ( color, maybeEvent ) =
             if isActive then
-                ( blue, Just onPress )
+                ( (colors theme).primary, Just onPress )
 
             else
-                ( lightGrey, Nothing )
+                ( (colors theme).disabled, Nothing )
     in
     Input.button
-        ([ padding 20
-         , Background.color color
-         , Font.color white
-         ]
-            ++ attrs
+        (Background.color color
+            :: Font.color (colors theme).buttonText
+            :: attrs
         )
         { onPress = maybeEvent
         , label = label
         }
+
+
+actionButton :
+    Theme
+    -> List (Attribute msg)
+    -> { isActive : Bool, onPress : msg, label : Element msg }
+    -> Element msg
+actionButton theme attrs opts =
+    button theme (padding 20 :: attrs) opts
 
 
 heroText :
@@ -97,11 +146,49 @@ heroText attrs s =
     el ([ Font.size fontSizes.huge ] ++ attrs) (text s)
 
 
-toDocument : { title : String, body : List (Element msg) } -> Document msg
-toDocument { title, body } =
+navBar : Theme -> List (Element msg) -> Element msg
+navBar theme elements =
+    row
+        [ Background.color (colors theme).primary
+        , Font.color (colors theme).buttonText
+        , height (px 50)
+        , width fill
+        , padding 10
+        ]
+        elements
+
+
+themePicker : Theme -> (Theme -> msg) -> Element msg
+themePicker theme onChange =
+    row []
+        [ case theme of
+            Light ->
+                button theme
+                    [ padding 5 ]
+                    { isActive = True
+                    , onPress = onChange Dark
+                    , label = text "Dark mode 🌙"
+                    }
+
+            Dark ->
+                button theme
+                    [ padding 5 ]
+                    { isActive = True
+                    , onPress = onChange Light
+                    , label = text "Light mode 🌞"
+                    }
+        ]
+
+
+toDocument : Theme -> { title : String, body : List (Element msg) } -> Document msg
+toDocument theme { title, body } =
     { title = title
     , body =
-        [ layout [] <|
+        [ layout
+            [ Font.color (colors theme).text
+            , Background.color (colors theme).background
+            ]
+          <|
             column [ width fill, height fill, spacing 20 ] body
         ]
     }

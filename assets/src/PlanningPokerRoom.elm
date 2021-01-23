@@ -22,7 +22,8 @@ import PlanningPokerUI as UI
 
 
 type alias Model =
-    { state : State
+    { theme : UI.Theme
+    , state : State
     , room : Room
     , player : String
     , playerName : String
@@ -45,6 +46,7 @@ type Msg
     | GotVote (Result Decode.Error ReceivedVote)
     | GotReveal
     | GotReset
+    | UpdateTheme UI.Theme
 
 
 type Presence
@@ -89,13 +91,14 @@ type Vote
 
 
 init :
-    { id : String
+    { theme : UI.Theme
+    , id : String
     , player : String
     , roomName : String
     , playerName : String
     }
     -> ( Model, Cmd Msg )
-init { id, player, roomName, playerName } =
+init { theme, id, player, roomName, playerName } =
     let
         room =
             { id = id
@@ -115,7 +118,8 @@ init { id, player, roomName, playerName } =
                     ]
                 )
     in
-    ( { room = room
+    ( { theme = theme
+      , room = room
       , state = state
       , player = player
       , playerName = playerName
@@ -217,6 +221,9 @@ update key msg model =
             , Cmd.none
             )
 
+        UpdateTheme theme ->
+            ( { model | theme = theme }, API.updateTheme theme )
+
 
 view : { height : Int, width : Int } -> Model -> Document Msg
 view dimensions model =
@@ -231,20 +238,22 @@ view dimensions model =
     in
     case model.state of
         Playing ->
-            UI.toDocument
+            UI.toDocument model.theme
                 { title = model.room.name
                 , body =
-                    [ navBar { title = model.room.name, playerName = playerName }
+                    [ navBar model.theme { title = model.room.name, playerName = playerName }
                     , viewRoom device model
+                    , UI.themePicker model.theme UpdateTheme
                     ]
                 }
 
         Joining ->
-            UI.toDocument
+            UI.toDocument model.theme
                 { title = model.room.name
                 , body =
-                    [ navBar { title = model.room.name, playerName = playerName }
-                    , joinForm model.room model.playerName
+                    [ navBar model.theme { title = model.room.name, playerName = playerName }
+                    , joinForm model.theme model.room model.playerName
+                    , UI.themePicker model.theme UpdateTheme
                     ]
                 }
 
@@ -258,7 +267,7 @@ viewRoom device model =
     in
     case device.class of
         Phone ->
-            column [ width fill, spacing 20 ]
+            column [ width fill, spacing 20, centerY ]
                 [ viewPlayers (Dict.values model.room.players) model.showVotes
                 , el [ width (fillPortion 3), alignTop ] <|
                     viewCards model myVote
@@ -266,7 +275,7 @@ viewRoom device model =
                 ]
 
         _ ->
-            column [ width fill, spacing 20 ]
+            column [ width fill, spacing 20, centerY, alignTop ]
                 [ row
                     [ width fill ]
                     [ el [ width (fillPortion 3), alignTop ] <|
@@ -279,23 +288,16 @@ viewRoom device model =
                 ]
 
 
-navBar : { title : String, playerName : String } -> Element Msg
-navBar { title, playerName } =
-    row
-        [ Background.color UI.colors.primary
-        , height (px 50)
-        , width fill
-        , padding 10
-        ]
+navBar : UI.Theme -> { title : String, playerName : String } -> Element Msg
+navBar theme { title, playerName } =
+    UI.navBar theme
         [ el
             [ Font.alignLeft
-            , Font.color UI.colors.background
             , width fill
             ]
             (text title)
         , el
             [ Font.alignRight
-            , Font.color UI.colors.background
             ]
             (text playerName)
         ]
@@ -309,10 +311,10 @@ viewCards model selected =
 
         selectedColor =
             if enabled then
-                UI.colors.selected
+                (UI.colors model.theme).selected
 
             else
-                UI.colors.disabled
+                (UI.colors model.theme).disabled
 
         card value =
             Input.button
@@ -328,7 +330,7 @@ viewCards model selected =
                         selectedColor
 
                     else
-                        UI.colors.background
+                        (UI.colors model.theme).background
                 , Font.size 50
                 ]
                 { onPress =
@@ -405,13 +407,13 @@ viewPlayers playerList showVotes =
 moderatorTools : Model -> Element Msg
 moderatorTools model =
     row [ centerX, spacing 20 ]
-        [ UI.actionButton
+        [ UI.actionButton model.theme
             [ centerX ]
             { isActive = not model.showVotes
             , onPress = Reveal
             , label = text "Reveal"
             }
-        , UI.actionButton
+        , UI.actionButton model.theme
             [ centerX ]
             { isActive = True
             , onPress = Reset
@@ -420,8 +422,8 @@ moderatorTools model =
         ]
 
 
-joinForm : Room -> String -> Element Msg
-joinForm room playerName =
+joinForm : UI.Theme -> Room -> String -> Element Msg
+joinForm theme room playerName =
     let
         players =
             Dict.values room.players
@@ -441,7 +443,8 @@ joinForm room playerName =
             , label = Input.labelHidden "Your name"
             , placeholder = Just (Input.placeholder [] (text "Your name"))
             }
-        , UI.actionButton [ centerX ]
+        , UI.actionButton theme
+            [ centerX ]
             { isActive = not (String.isEmpty playerName)
             , onPress = JoinRoom
             , label = text "Join!"

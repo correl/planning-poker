@@ -7,6 +7,7 @@ import Html
 import PlanningPokerEntry as Entry
 import PlanningPokerNotFound as NotFound
 import PlanningPokerRoom as Room
+import PlanningPokerUI as UI
 import Url exposing (Url)
 import Url.Parser as Parser exposing ((</>), Parser, s, string)
 
@@ -16,6 +17,7 @@ type alias Flags =
     , room : String
     , height : Int
     , width : Int
+    , theme : String
     }
 
 
@@ -24,6 +26,7 @@ type alias Model =
     , key : Nav.Key
     , player : String
     , room : String
+    , theme : UI.Theme
     , dimensions : { width : Int, height : Int }
     }
 
@@ -48,12 +51,25 @@ type Msg
 
 
 init : Flags -> Url -> Nav.Key -> ( Model, Cmd Msg )
-init { player, room, width, height } url key =
+init { player, room, width, height, theme } url key =
+    let
+        parseTheme themeString =
+            case String.toLower themeString of
+                "light" ->
+                    UI.Light
+
+                "dark" ->
+                    UI.Dark
+
+                _ ->
+                    UI.Light
+    in
     updateUrl url
         { page = NotFound
         , key = key
         , player = player
         , room = room
+        , theme = parseTheme theme
         , dimensions = { width = width, height = height }
         }
 
@@ -104,14 +120,15 @@ updateUrl : Url -> Model -> ( Model, Cmd Msg )
 updateUrl url model =
     case Parser.parse parser url of
         Just Entry ->
-            toEntry model (Entry.init model.room)
+            toEntry model (Entry.init model.theme model.room)
 
         Just (Room id) ->
             case model.page of
                 EntryPage entryModel ->
                     toRoom model
                         (Room.init
-                            { id = id
+                            { theme = entryModel.theme
+                            , id = id
                             , player = model.player
                             , roomName = "Planning Poker"
                             , playerName = entryModel.playerName
@@ -121,7 +138,8 @@ updateUrl url model =
                 _ ->
                     toRoom model
                         (Room.init
-                            { id = id
+                            { theme = model.theme
+                            , id = id
                             , player = model.player
                             , roomName = "Planning Poker"
                             , playerName = ""
